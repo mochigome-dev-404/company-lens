@@ -894,3 +894,737 @@ renderDetail(selected);
     showDashboard(company);
   });
 })();
+
+
+/* ---- Company Lens: Compare view ---- */
+(() => {
+  const topbarEl = document.querySelector('.topbar');
+  const heroGridEl = document.querySelector('.hero-grid');
+  const contentGridEl = document.querySelector('.content-grid');
+  const companyView = document.querySelector('#companiesView');
+  const rankingView = document.querySelector('#rankingsView');
+  const navButtons = document.querySelectorAll('.nav-item');
+
+  const compareView = document.createElement('section');
+  compareView.id = 'compareView';
+  compareView.style.display = 'none';
+
+  (rankingView || companyView || topbarEl).insertAdjacentElement(
+    'afterend',
+    compareView
+  );
+
+  const compareStyle = document.createElement('style');
+
+  compareStyle.textContent = `
+    #compareView {
+      display: grid;
+      gap: 18px;
+    }
+
+    .compare-shell {
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 28px;
+      padding: 24px;
+      background:
+        radial-gradient(
+          circle at 8% 0%,
+          rgba(221, 186, 97, .13),
+          transparent 29%
+        ),
+        radial-gradient(
+          circle at 94% 90%,
+          rgba(125, 201, 151, .10),
+          transparent 24%
+        ),
+        linear-gradient(
+          145deg,
+          rgba(255,255,255,.08),
+          rgba(255,255,255,.025)
+        );
+      box-shadow: var(--shadow);
+    }
+
+    .compare-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 24px;
+      align-items: end;
+      margin-bottom: 22px;
+    }
+
+    .compare-head h2 {
+      margin: 4px 0 0;
+      font-size: clamp(32px, 4vw, 52px);
+      letter-spacing: -.06em;
+    }
+
+    .compare-head p {
+      max-width: 470px;
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.8;
+    }
+
+    .compare-picker {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+      gap: 12px;
+      align-items: end;
+      padding: 18px 0;
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .picker-field {
+      display: grid;
+      gap: 8px;
+    }
+
+    .picker-field span {
+      color: var(--gold);
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: .13em;
+      text-transform: uppercase;
+    }
+
+    .picker-field select {
+      width: 100%;
+      min-height: 48px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: rgba(0,0,0,.19);
+      color: var(--text);
+      padding: 0 13px;
+      font: inherit;
+      font-weight: 800;
+    }
+
+    .swap-button {
+      min-height: 48px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: rgba(255,255,255,.045);
+      color: var(--gold);
+      padding: 0 16px;
+      font: inherit;
+      font-weight: 900;
+      cursor: pointer;
+      transition: transform .18s ease, border-color .18s ease;
+    }
+
+    .swap-button:hover {
+      transform: translateY(-2px);
+      border-color: var(--gold);
+    }
+
+    .compare-spotlight {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 82px minmax(0, 1fr);
+      gap: 14px;
+      align-items: stretch;
+      margin: 20px 0;
+    }
+
+    .compare-company-card {
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      padding: 20px;
+      background: rgba(0,0,0,.13);
+    }
+
+    .compare-company-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      align-items: flex-start;
+    }
+
+    .compare-company-card h3 {
+      margin: 7px 0 4px;
+      font-size: 28px;
+      letter-spacing: -.04em;
+    }
+
+    .compare-company-card .company-meta {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .compare-score {
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .compare-score .grade {
+      display: inline-block;
+      margin-right: 6px;
+      font-size: 21px;
+    }
+
+    .compare-score strong {
+      font-size: 40px;
+      letter-spacing: -.07em;
+    }
+
+    .compare-score small {
+      color: var(--muted);
+      font-weight: 800;
+    }
+
+    .compare-company-card .company-copy {
+      min-height: 52px;
+      margin: 17px 0;
+      color: var(--soft);
+      line-height: 1.75;
+    }
+
+    .compare-detail-button {
+      border: 1px solid var(--gold);
+      border-radius: 12px;
+      background: transparent;
+      color: var(--gold);
+      padding: 10px 13px;
+      font: inherit;
+      font-weight: 900;
+      cursor: pointer;
+    }
+
+    .compare-detail-button:hover {
+      background: var(--gold);
+      color: #17140d;
+    }
+
+    .vs-mark {
+      display: grid;
+      place-items: center;
+      align-content: center;
+      color: var(--gold);
+      font-size: 15px;
+      font-weight: 900;
+      letter-spacing: .12em;
+    }
+
+    .vs-mark::before,
+    .vs-mark::after {
+      content: "";
+      width: 1px;
+      height: 32px;
+      background: var(--line);
+    }
+
+    .compare-insight {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .insight-chip {
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 15px 16px;
+      background: rgba(255,255,255,.035);
+    }
+
+    .insight-chip span {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--gold);
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: .13em;
+    }
+
+    .insight-chip strong {
+      display: block;
+      font-size: 16px;
+    }
+
+    .insight-chip p {
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    .compare-metrics {
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      background: rgba(0,0,0,.12);
+    }
+
+    .compare-metric-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 160px minmax(0, 1fr);
+      gap: 16px;
+      align-items: center;
+      padding: 17px 18px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .compare-metric-row:last-child {
+      border-bottom: 0;
+    }
+
+    .compare-side {
+      display: grid;
+      gap: 8px;
+    }
+
+    .compare-side.right {
+      text-align: right;
+    }
+
+    .compare-number {
+      font-size: 23px;
+      font-weight: 900;
+      letter-spacing: -.06em;
+    }
+
+    .compare-number.is-winner {
+      color: var(--gold);
+    }
+
+    .compare-bar {
+      height: 7px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: rgba(255,255,255,.08);
+    }
+
+    .compare-bar span {
+      display: block;
+      height: 100%;
+      border-radius: inherit;
+      background: rgba(255,255,255,.35);
+    }
+
+    .compare-side .compare-bar span.is-winner {
+      background: linear-gradient(90deg, var(--gold), #f3d67f);
+    }
+
+    .compare-side.right .compare-bar {
+      transform: scaleX(-1);
+    }
+
+    .compare-metric-label {
+      text-align: center;
+    }
+
+    .compare-metric-label span {
+      display: block;
+      color: var(--text);
+      font-weight: 900;
+    }
+
+    .compare-metric-label small {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 11px;
+      letter-spacing: .08em;
+    }
+
+    @media (max-width: 820px) {
+      .compare-head {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .compare-picker,
+      .compare-spotlight {
+        grid-template-columns: 1fr;
+      }
+
+      .swap-button {
+        width: 100%;
+      }
+
+      .vs-mark {
+        grid-template-columns: 1fr auto 1fr;
+        grid-auto-flow: column;
+      }
+
+      .vs-mark::before,
+      .vs-mark::after {
+        width: 32px;
+        height: 1px;
+      }
+
+      .compare-metric-row {
+        grid-template-columns: minmax(0, 1fr) 90px minmax(0, 1fr);
+        gap: 10px;
+        padding: 15px 12px;
+      }
+
+      .compare-metric-label span {
+        font-size: 12px;
+      }
+
+      .compare-metric-label small {
+        display: none;
+      }
+    }
+  `;
+
+  document.head.appendChild(compareStyle);
+
+  const metrics = [
+    {
+      key: 'score',
+      label: '総合評価',
+      english: 'OVERALL'
+    },
+    {
+      key: 'profitability',
+      label: '収益性',
+      english: 'PROFITABILITY'
+    },
+    {
+      key: 'safety',
+      label: '安全性',
+      english: 'SAFETY'
+    },
+    {
+      key: 'growth',
+      label: '成長性',
+      english: 'GROWTH'
+    },
+    {
+      key: 'valuation',
+      label: '割安度',
+      english: 'VALUATION'
+    },
+    {
+      key: 'shareholder',
+      label: '株主還元',
+      english: 'RETURN'
+    }
+  ];
+
+  let leftTicker = '7203';
+  let rightTicker = '6758';
+
+  function scoreOf(company, metricKey) {
+    return metricKey === 'score'
+      ? company.score
+      : company.metrics[metricKey];
+  }
+
+  function gradeFromScore(score) {
+    if (score >= 95) return 'S';
+    if (score >= 90) return 'A+';
+    if (score >= 85) return 'A';
+    if (score >= 80) return 'B+';
+    if (score >= 75) return 'B';
+    return 'C';
+  }
+
+  function gradeStyle(grade) {
+    if (grade === 'S') return 'grade-s';
+    if (grade.includes('A')) return 'grade-a';
+    if (grade.includes('B')) return 'grade-b';
+    return 'grade-c';
+  }
+
+  function optionList(currentTicker) {
+    return companies.map(company => `
+      <option
+        value="${company.ticker}"
+        ${company.ticker === currentTicker ? 'selected' : ''}
+      >
+        ${company.ticker} · ${company.name}
+      </option>
+    `).join('');
+  }
+
+  function resolveCompanies() {
+    const left = companies.find(
+      company => company.ticker === leftTicker
+    ) || companies[0];
+
+    let right = companies.find(
+      company => company.ticker === rightTicker
+    ) || companies[1];
+
+    if (left.ticker === right.ticker) {
+      right = companies.find(
+        company => company.ticker !== left.ticker
+      ) || companies[0];
+
+      rightTicker = right.ticker;
+    }
+
+    return { left, right };
+  }
+
+  function biggestStrength(company, other) {
+    return metrics
+      .filter(metric => metric.key !== 'score')
+      .map(metric => ({
+        ...metric,
+        difference:
+          scoreOf(company, metric.key) -
+          scoreOf(other, metric.key)
+      }))
+      .sort((a, b) => b.difference - a.difference)[0];
+  }
+
+  function renderCompare() {
+    const { left, right } = resolveCompanies();
+
+    const leftStrength = biggestStrength(left, right);
+    const rightStrength = biggestStrength(right, left);
+
+    compareView.innerHTML = `
+      <article class="compare-shell">
+        <div class="compare-head">
+          <div>
+            <p class="section-label">Comparison Studio</p>
+            <h2>2社を並べて見る</h2>
+          </div>
+
+          <p>
+            同じ評価軸で企業を見比べる。
+            それぞれの強みと、企業品質の違いを一目で確認できます。
+          </p>
+        </div>
+
+        <div class="compare-picker">
+          <label class="picker-field">
+            <span>LEFT COMPANY</span>
+            <select id="compareLeftSelect">
+              ${optionList(left.ticker)}
+            </select>
+          </label>
+
+          <button
+            class="swap-button"
+            id="swapCompareButton"
+            type="button"
+          >
+            ⇄ 入れ替える
+          </button>
+
+          <label class="picker-field">
+            <span>RIGHT COMPANY</span>
+            <select id="compareRightSelect">
+              ${optionList(right.ticker)}
+            </select>
+          </label>
+        </div>
+
+        <div class="compare-spotlight">
+          <article class="compare-company-card">
+            <div class="compare-company-top">
+              <div>
+                <p class="section-label">
+                  ${left.ticker} · ${left.sector}
+                </p>
+                <h3>${left.name}</h3>
+                <p class="company-meta">${left.jp}</p>
+              </div>
+
+              <div class="compare-score">
+                <span class="grade ${gradeStyle(left.grade)}">
+                  ${left.grade}
+                </span>
+                <strong>${left.score}</strong>
+                <small>/100</small>
+              </div>
+            </div>
+
+            <p class="company-copy">${left.description}</p>
+
+            <button
+              class="compare-detail-button"
+              type="button"
+              data-company-detail="${left.ticker}"
+            >
+              詳細を見る
+            </button>
+          </article>
+
+          <div class="vs-mark">VS</div>
+
+          <article class="compare-company-card">
+            <div class="compare-company-top">
+              <div>
+                <p class="section-label">
+                  ${right.ticker} · ${right.sector}
+                </p>
+                <h3>${right.name}</h3>
+                <p class="company-meta">${right.jp}</p>
+              </div>
+
+              <div class="compare-score">
+                <span class="grade ${gradeStyle(right.grade)}">
+                  ${right.grade}
+                </span>
+                <strong>${right.score}</strong>
+                <small>/100</small>
+              </div>
+            </div>
+
+            <p class="company-copy">${right.description}</p>
+
+            <button
+              class="compare-detail-button"
+              type="button"
+              data-company-detail="${right.ticker}"
+            >
+              詳細を見る
+            </button>
+          </article>
+        </div>
+
+        <div class="compare-insight">
+          <article class="insight-chip">
+            <span>${left.name.toUpperCase()} の優位項目</span>
+            <strong>${leftStrength.label}</strong>
+            <p>
+              ${right.name}より
+              ${Math.max(leftStrength.difference, 0)}
+              ポイント高い評価です。
+            </p>
+          </article>
+
+          <article class="insight-chip">
+            <span>${right.name.toUpperCase()} の優位項目</span>
+            <strong>${rightStrength.label}</strong>
+            <p>
+              ${left.name}より
+              ${Math.max(rightStrength.difference, 0)}
+              ポイント高い評価です。
+            </p>
+          </article>
+        </div>
+
+        <section class="compare-metrics">
+          ${metrics.map(metric => {
+            const leftScore = scoreOf(left, metric.key);
+            const rightScore = scoreOf(right, metric.key);
+            const leftWins = leftScore > rightScore;
+            const rightWins = rightScore > leftScore;
+
+            return `
+              <article class="compare-metric-row">
+                <div class="compare-side left">
+                  <strong
+                    class="compare-number ${leftWins ? 'is-winner' : ''}"
+                  >
+                    ${leftScore}
+                  </strong>
+
+                  <div class="compare-bar">
+                    <span
+                      class="${leftWins ? 'is-winner' : ''}"
+                      style="width:${leftScore}%"
+                    ></span>
+                  </div>
+                </div>
+
+                <div class="compare-metric-label">
+                  <span>${metric.label}</span>
+                  <small>${metric.english}</small>
+                </div>
+
+                <div class="compare-side right">
+                  <strong
+                    class="compare-number ${rightWins ? 'is-winner' : ''}"
+                  >
+                    ${rightScore}
+                  </strong>
+
+                  <div class="compare-bar">
+                    <span
+                      class="${rightWins ? 'is-winner' : ''}"
+                      style="width:${rightScore}%"
+                    ></span>
+                  </div>
+                </div>
+              </article>
+            `;
+          }).join('')}
+        </section>
+      </article>
+    `;
+  }
+
+  function setCompareHeader() {
+    document.querySelector('.eyebrow').textContent =
+      'Comparison Studio';
+
+    document.querySelector('.topbar h1').textContent =
+      '企業を、比べる。';
+  }
+
+  function showCompare() {
+    heroGridEl.style.display = 'none';
+    contentGridEl.style.display = 'none';
+
+    if (companyView) {
+      companyView.style.display = 'none';
+    }
+
+    if (rankingView) {
+      rankingView.style.display = 'none';
+    }
+
+    compareView.style.display = 'grid';
+
+    setCompareHeader();
+    renderCompare();
+  }
+
+  navButtons.forEach(button => {
+    button.addEventListener('click', () => {
+      if (button.dataset.section === 'compare') {
+        showCompare();
+      }
+    });
+  });
+
+  compareView.addEventListener('change', event => {
+    if (event.target.id === 'compareLeftSelect') {
+      leftTicker = event.target.value;
+      renderCompare();
+    }
+
+    if (event.target.id === 'compareRightSelect') {
+      rightTicker = event.target.value;
+      renderCompare();
+    }
+  });
+
+  compareView.addEventListener('click', event => {
+    const swapButton = event.target.closest('#swapCompareButton');
+
+    if (swapButton) {
+      const previousLeft = leftTicker;
+      leftTicker = rightTicker;
+      rightTicker = previousLeft;
+      renderCompare();
+      return;
+    }
+
+    const detailButton = event.target.closest('[data-company-detail]');
+
+    if (!detailButton) return;
+
+    const company = companies.find(
+      item => item.ticker === detailButton.dataset.companyDetail
+    );
+
+    renderDetail(company);
+
+    document
+      .querySelector('[data-section="dashboard"]')
+      .click();
+  });
+})();
