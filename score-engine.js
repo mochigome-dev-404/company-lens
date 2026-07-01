@@ -5,7 +5,7 @@
    ========================================================= */
 
 (() => {
-  const sampleFundamentals = {
+  let sampleFundamentals = {
     '7203': {
       roe: 12.5,
       operatingMargin: 13.0,
@@ -90,7 +90,14 @@
       buybackYield: 0.5
     }
   };
-
+/*
+  data/fundamentals.js が読み込まれている場合は、
+  そちらのデータを優先して採点に使う。
+*/
+if (window.CompanyLensFundamentals) {
+  sampleFundamentals = window.CompanyLensFundamentals;
+}
+   
   const labels = {
     profitability: '収益性',
     safety: '安全性',
