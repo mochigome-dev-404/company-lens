@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Company Lens</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">CL</div>
+        <div>
+          <p class="brand-name">Company Lens</p>
+          <p class="brand-sub">Curated Japanese Equities</p>
+        </div>
+      </div>
+
+      <nav class="nav">
+        <button class="nav-item active" data-section="dashboard">Dashboard</button>
+        <button class="nav-item" data-section="companies">Companies</button>
+        <button class="nav-item" data-section="rankings">Rankings</button>
+        <button class="nav-item" data-section="compare">Compare</button>
+        <button class="nav-item" data-section="bookmarks">Bookmarks</button>
+      </nav>
+
+      <div class="sidebar-note">
+        <span>Prototype</span>
+        <strong>Local sample data</strong>
+        <p>次はここを実データAPIに差し替える。</p>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Japanese Equities Intelligence</p>
+          <h1>企業を、鑑賞する。</h1>
+        </div>
+        <div class="search-wrap">
+          <input id="searchInput" type="search" placeholder="銘柄コード・企業名で検索 例: 7203 / Sony" />
+          <span class="shortcut">⌘K</span>
+        </div>
+      </header>
+
+      <section class="hero-grid">
+        <article class="hero-card">
+          <p class="section-label">Featured Company</p>
+          <div class="hero-company">
+            <div>
+              <p id="heroTicker" class="ticker">7203</p>
+              <h2 id="heroName">Toyota Motor</h2>
+              <p id="heroDesc" class="muted">強固な財務基盤と世界規模の製造力を持つ、日本を代表する成熟企業。</p>
+            </div>
+            <div class="grade-block">
+              <span id="heroGrade" class="grade">A+</span>
+              <strong id="heroScore">91</strong>
+              <small>/100</small>
+            </div>
+          </div>
+          <div class="mini-chart" aria-label="sample chart">
+            <span style="height:42%"></span><span style="height:54%"></span><span style="height:46%"></span><span style="height:66%"></span><span style="height:72%"></span><span style="height:68%"></span><span style="height:82%"></span><span style="height:88%"></span>
+          </div>
+        </article>
+
+        <article class="index-card">
+          <p class="section-label">Market Quality Index</p>
+          <div class="index-value">84.2</div>
+          <p class="muted">サンプル企業群の総合品質スコア平均</p>
+          <div class="index-row"><span>Quality</span><b>High</b></div>
+          <div class="index-row"><span>Valuation</span><b>Neutral</b></div>
+          <div class="index-row"><span>Momentum</span><b>Stable</b></div>
+        </article>
+      </section>
+
+      <section class="content-grid">
+        <div class="panel company-panel">
+          <div class="panel-head">
+            <div>
+              <p class="section-label">Companies</p>
+              <h3>評価対象企業</h3>
+            </div>
+            <button id="sortButton" class="ghost-button">Score順</button>
+          </div>
+          <div id="companyList" class="company-list"></div>
+        </div>
+
+        <div class="panel detail-panel">
+          <div class="detail-head">
+            <div>
+              <p id="detailTicker" class="ticker">7203</p>
+              <h2 id="detailName">Toyota Motor</h2>
+              <p id="detailSector" class="muted">Automobiles</p>
+            </div>
+            <div class="score-ring">
+              <svg viewBox="0 0 120 120">
+                <circle cx="60" cy="60" r="52" class="ring-bg"></circle>
+                <circle id="ringProgress" cx="60" cy="60" r="52" class="ring-progress"></circle>
+              </svg>
+              <div><strong id="detailScore">91</strong><span id="detailGrade">A+</span></div>
+            </div>
+          </div>
+
+          <div class="tabs">
+            <button class="tab active">Overview</button>
+            <button class="tab">Financials</button>
+            <button class="tab">AI Analysis</button>
+          </div>
+
+          <div id="metrics" class="metrics"></div>
+
+          <div class="analysis-card">
+            <p class="section-label">AI Insight</p>
+            <p id="analysisText">Toyota maintains exceptional financial resilience, while growth is moderate due to the scale and maturity of the business.</p>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
