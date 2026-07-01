@@ -94,3 +94,246 @@ document.querySelectorAll('.nav-item').forEach(btn => {
 });
 
 renderDetail(selected);
+
+
+/* ---- Company Lens: Companies view ---- */
+(() => {
+  const topbarEl = document.querySelector('.topbar');
+  const heroGridEl = document.querySelector('.hero-grid');
+  const contentGridEl = document.querySelector('.content-grid');
+  const navButtons = document.querySelectorAll('.nav-item');
+  const companyView = document.createElement('section');
+
+  companyView.id = 'companiesView';
+  companyView.style.display = 'none';
+  topbarEl.insertAdjacentElement('afterend', companyView);
+
+  const pageStyle = document.createElement('style');
+  pageStyle.textContent = `
+    #companiesView {
+      display: grid;
+      gap: 18px;
+    }
+
+    .company-directory {
+      border: 1px solid var(--line);
+      border-radius: 28px;
+      padding: 22px;
+      background: linear-gradient(
+        145deg,
+        rgba(255,255,255,.085),
+        rgba(255,255,255,.035)
+      );
+      box-shadow: var(--shadow);
+    }
+
+    .directory-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 18px;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+
+    .directory-head h2 {
+      font-size: 28px;
+    }
+
+    .directory-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .directory-card {
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      padding: 18px;
+      background: rgba(255,255,255,.035);
+    }
+
+    .directory-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: flex-start;
+    }
+
+    .directory-card h3 {
+      margin: 7px 0 4px;
+    }
+
+    .directory-meta {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .directory-copy {
+      color: var(--soft);
+      line-height: 1.75;
+      margin: 14px 0 16px;
+    }
+
+    .open-company {
+      border: 1px solid var(--gold);
+      background: var(--gold);
+      color: #17140d;
+      border-radius: 12px;
+      padding: 10px 14px;
+      font-weight: 800;
+    }
+
+    .empty-results {
+      padding: 42px 12px;
+      text-align: center;
+      color: var(--muted);
+    }
+
+    @media (max-width: 620px) {
+      .directory-head,
+      .directory-top {
+        align-items: flex-start;
+      }
+
+      .directory-head {
+        display: grid;
+      }
+    }
+  `;
+
+  document.head.appendChild(pageStyle);
+
+  function setTitle(eyebrow, title) {
+    document.querySelector('.eyebrow').textContent = eyebrow;
+    document.querySelector('.topbar h1').textContent = title;
+  }
+
+  function renderCompaniesDirectory() {
+    const query = searchInput.value.trim().toLowerCase();
+
+    const filtered = companies
+      .filter(company =>
+        company.ticker.includes(query) ||
+        company.name.toLowerCase().includes(query) ||
+        company.jp.includes(query) ||
+        company.sector.toLowerCase().includes(query)
+      )
+      .sort((a, b) => b.score - a.score);
+
+    companyView.innerHTML = `
+      <article class="company-directory">
+        <div class="directory-head">
+          <div>
+            <p class="section-label">Company Directory</p>
+            <h2>評価対象企業</h2>
+          </div>
+          <p class="muted">${filtered.length} companies</p>
+        </div>
+
+        <div class="directory-list">
+          ${
+            filtered.length
+              ? filtered.map(company => `
+                <article class="directory-card">
+                  <div class="directory-top">
+                    <div>
+                      <p class="section-label">
+                        ${company.ticker} · ${company.sector}
+                      </p>
+                      <h3>${company.name}</h3>
+                      <p class="directory-meta">${company.jp}</p>
+                    </div>
+
+                    <div class="grade-block">
+                      <span class="grade ${gradeClass(company.grade)}">
+                        ${company.grade}
+                      </span>
+                      <strong>${company.score}</strong><small>/100</small>
+                    </div>
+                  </div>
+
+                  <p class="directory-copy">${company.description}</p>
+
+                  <button
+                    class="open-company"
+                    data-ticker="${company.ticker}"
+                  >
+                    詳細を見る
+                  </button>
+                </article>
+              `).join('')
+              : '<p class="empty-results">該当する企業は見つかりませんでした。</p>'
+          }
+        </div>
+      </article>
+    `;
+  }
+
+  function showDashboard() {
+    heroGridEl.style.display = '';
+    contentGridEl.style.display = '';
+    companyView.style.display = 'none';
+
+    setTitle(
+      'Japanese Equities Intelligence',
+      '企業を、鑑賞する。'
+    );
+  }
+
+  function showCompanies() {
+    heroGridEl.style.display = 'none';
+    contentGridEl.style.display = 'none';
+    companyView.style.display = 'grid';
+
+    setTitle(
+      'Company Directory',
+      '企業一覧'
+    );
+
+    renderCompaniesDirectory();
+  }
+
+  navButtons.forEach(button => {
+    button.addEventListener('click', () => {
+      if (button.dataset.section === 'companies') {
+        showCompanies();
+      }
+
+      if (button.dataset.section === 'dashboard') {
+        showDashboard();
+      }
+    });
+  });
+
+  searchInput.addEventListener('input', () => {
+    if (companyView.style.display !== 'none') {
+      renderCompaniesDirectory();
+    }
+  });
+
+  companyView.addEventListener('click', event => {
+    const button = event.target.closest('.open-company');
+
+    if (!button) return;
+
+    const company = companies.find(
+      item => item.ticker === button.dataset.ticker
+    );
+
+    renderDetail(company);
+
+    document
+      .querySelector('[data-section="dashboard"]')
+      .click();
+  });
+
+  document.addEventListener('keydown', event => {
+    if (
+      (event.ctrlKey || event.metaKey) &&
+      event.key.toLowerCase() === 'k'
+    ) {
+      event.preventDefault();
+      searchInput.focus();
+    }
+  });
+})();
