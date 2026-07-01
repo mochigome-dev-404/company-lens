@@ -2108,3 +2108,515 @@ renderDetail(selected);
 
   showBookmarkButton();
 })();
+
+
+/* ---- Company Lens: Score rationale view ---- */
+(() => {
+  const contentGridEl = document.querySelector('.content-grid');
+  const navButtons = document.querySelectorAll('.nav-item');
+
+  const rationaleView = document.createElement('section');
+  rationaleView.id = 'scoreRationale';
+  rationaleView.style.display = 'none';
+
+  contentGridEl.insertAdjacentElement('afterend', rationaleView);
+
+  const rationaleStyle = document.createElement('style');
+
+  rationaleStyle.textContent = `
+    #scoreRationale {
+      display: grid;
+      gap: 18px;
+      margin-top: 18px;
+    }
+
+    .rationale-shell {
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 28px;
+      padding: 24px;
+      background:
+        radial-gradient(
+          circle at 92% 0%,
+          rgba(221, 186, 97, .13),
+          transparent 31%
+        ),
+        linear-gradient(
+          145deg,
+          rgba(255,255,255,.08),
+          rgba(255,255,255,.025)
+        );
+      box-shadow: var(--shadow);
+    }
+
+    .rationale-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 28px;
+      align-items: flex-end;
+      margin-bottom: 22px;
+    }
+
+    .rationale-head h2 {
+      margin: 4px 0 0;
+      font-size: clamp(32px, 4vw, 52px);
+      letter-spacing: -.06em;
+    }
+
+    .rationale-head p {
+      max-width: 470px;
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.8;
+    }
+
+    .rationale-overview {
+      display: grid;
+      grid-template-columns: minmax(0, 1.45fr) minmax(200px, .55fr);
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+
+    .rationale-summary,
+    .rationale-score-card {
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      padding: 20px;
+      background: rgba(0,0,0,.13);
+    }
+
+    .rationale-summary h3 {
+      margin: 7px 0 10px;
+      font-size: 24px;
+      letter-spacing: -.04em;
+    }
+
+    .rationale-summary p {
+      margin: 0;
+      color: var(--soft);
+      line-height: 1.85;
+    }
+
+    .rationale-score-card {
+      display: grid;
+      align-content: center;
+      text-align: center;
+    }
+
+    .rationale-score-card span {
+      color: var(--gold);
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: .14em;
+    }
+
+    .rationale-score-card strong {
+      display: block;
+      margin-top: 5px;
+      font-size: 62px;
+      letter-spacing: -.09em;
+      line-height: 1;
+    }
+
+    .rationale-score-card small {
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 900;
+    }
+
+    .rationale-signals {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .rationale-signal {
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 16px;
+      background: rgba(255,255,255,.035);
+    }
+
+    .rationale-signal span {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--gold);
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: .13em;
+    }
+
+    .rationale-signal strong {
+      display: block;
+      font-size: 17px;
+    }
+
+    .rationale-signal p {
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    .rationale-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .rationale-card {
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      padding: 18px;
+      background: rgba(0,0,0,.12);
+    }
+
+    .rationale-card-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      align-items: flex-start;
+    }
+
+    .rationale-card-top h3 {
+      margin: 6px 0 0;
+      font-size: 20px;
+    }
+
+    .rationale-card-top p {
+      margin: 0;
+      color: var(--gold);
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: .12em;
+    }
+
+    .rationale-value {
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .rationale-value strong {
+      font-size: 34px;
+      letter-spacing: -.07em;
+    }
+
+    .rationale-value small {
+      color: var(--muted);
+      font-weight: 800;
+    }
+
+    .rationale-meter {
+      height: 8px;
+      overflow: hidden;
+      margin: 17px 0 14px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.08);
+    }
+
+    .rationale-meter span {
+      display: block;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--gold), #f3d67f);
+    }
+
+    .rationale-card-text {
+      min-height: 47px;
+      margin: 0;
+      color: var(--soft);
+      line-height: 1.75;
+      font-size: 14px;
+    }
+
+    .rationale-note {
+      margin: 16px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.75;
+    }
+
+    @media (max-width: 820px) {
+      .rationale-head {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .rationale-overview,
+      .rationale-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 540px) {
+      .rationale-signals {
+        grid-template-columns: 1fr;
+      }
+    }
+  `;
+
+  document.head.appendChild(rationaleStyle);
+
+  const dimensions = [
+    {
+      key: 'profitability',
+      label: '収益性',
+      english: 'PROFITABILITY'
+    },
+    {
+      key: 'safety',
+      label: '安全性',
+      english: 'FINANCIAL HEALTH'
+    },
+    {
+      key: 'growth',
+      label: '成長性',
+      english: 'GROWTH'
+    },
+    {
+      key: 'valuation',
+      label: '割安度',
+      english: 'VALUATION'
+    },
+    {
+      key: 'shareholder',
+      label: '株主還元',
+      english: 'SHAREHOLDER RETURN'
+    }
+  ];
+
+  function explanationFor(key, score) {
+    if (key === 'profitability') {
+      if (score >= 90) {
+        return '利益率と資本効率が非常に高く、事業そのものが強い収益力を持つと評価しています。';
+      }
+
+      if (score >= 80) {
+        return '安定して利益を生み出す力があり、収益性は高い水準にあります。';
+      }
+
+      if (score >= 70) {
+        return '収益力はおおむね安定していますが、さらなる改善余地も残ります。';
+      }
+
+      return '収益性は相対的に弱く、利益構造や事業効率を慎重に見る必要があります。';
+    }
+
+    if (key === 'safety') {
+      if (score >= 90) {
+        return '財務基盤・資金余力・事業継続性の観点で非常に強い評価です。';
+      }
+
+      if (score >= 80) {
+        return '財務体質は健全で、外部環境の変化にも比較的耐えやすいと見ています。';
+      }
+
+      if (score >= 70) {
+        return '一定の財務安定性はありますが、負債や資金余力は継続して確認したい項目です。';
+      }
+
+      return '財務面の不確実性が残るため、負債・資金繰り・利益の安定性を重点的に見る必要があります。';
+    }
+
+    if (key === 'growth') {
+      if (score >= 90) {
+        return '売上・利益・事業機会の拡大余地が大きく、強い成長力を持つ企業として評価しています。';
+      }
+
+      if (score >= 80) {
+        return '成長性は高く、新規市場や既存事業の拡大が企業価値を支える可能性があります。';
+      }
+
+      if (score >= 70) {
+        return '成長は見込めるものの、急拡大よりは安定的な伸びが中心の企業です。';
+      }
+
+      return '成熟事業の比重が大きく、成長よりも安定性や還元を重視するタイプと見ています。';
+    }
+
+    if (key === 'valuation') {
+      if (score >= 90) {
+        return '企業品質に対して市場評価が比較的抑えられている、という仮説を示すスコアです。';
+      }
+
+      if (score >= 80) {
+        return '企業の質と価格のバランスは良好で、評価面にも一定の魅力があると見ています。';
+      }
+
+      if (score >= 70) {
+        return '極端な割高感はないものの、株価には一定の期待が織り込まれている可能性があります。';
+      }
+
+      return '企業品質は高くても、市場評価はすでに高い可能性があります。価格と期待値の確認が必要です。';
+    }
+
+    if (score >= 90) {
+      return '配当・自社株買い・資本政策を通じた株主還元への姿勢が非常に強い評価です。';
+    }
+
+    if (score >= 80) {
+      return '継続的な還元姿勢が見られ、株主との利益配分にも前向きな企業と評価しています。';
+    }
+
+    if (score >= 70) {
+      return '還元姿勢は一定水準にありますが、成長投資とのバランスを見ながら判断したい項目です。';
+    }
+
+    return '株主還元よりも、成長投資や財務改善を優先している可能性があります。';
+  }
+
+  function scoreOf(company, key) {
+    return company.metrics[key];
+  }
+
+  function strongestDimension(company) {
+    return dimensions
+      .map(dimension => ({
+        ...dimension,
+        score: scoreOf(company, dimension.key)
+      }))
+      .sort((a, b) => b.score - a.score)[0];
+  }
+
+  function weakestDimension(company) {
+    return dimensions
+      .map(dimension => ({
+        ...dimension,
+        score: scoreOf(company, dimension.key)
+      }))
+      .sort((a, b) => a.score - b.score)[0];
+  }
+
+  function overallNarrative(company) {
+    const strongest = strongestDimension(company);
+    const weakest = weakestDimension(company);
+
+    return `
+      ${company.jp}は、
+      ${strongest.label}を軸に企業品質を支えているタイプです。
+      総合評価は${company.score}点。
+      一方で${weakest.label}は、他の項目と比べて慎重に確認したい領域です。
+    `;
+  }
+
+  function renderRationale(company) {
+    if (!company) return;
+
+    const strongest = strongestDimension(company);
+    const weakest = weakestDimension(company);
+
+    rationaleView.innerHTML = `
+      <article class="rationale-shell">
+        <div class="rationale-head">
+          <div>
+            <p class="section-label">Score Rationale</p>
+            <h2>評価の根拠</h2>
+          </div>
+
+          <p>
+            Company Lensのスコアは、
+            企業をひとつの数字だけで判断せず、
+            収益性・財務・成長・評価・還元の5つに分けて読むための設計です。
+          </p>
+        </div>
+
+        <div class="rationale-overview">
+          <article class="rationale-summary">
+            <p class="section-label">${company.ticker} · ${company.name}</p>
+            <h3>${company.jp}の企業品質</h3>
+            <p>${overallNarrative(company)}</p>
+          </article>
+
+          <article class="rationale-score-card">
+            <span>OVERALL QUALITY</span>
+            <strong>${company.score}</strong>
+            <small>/100</small>
+          </article>
+        </div>
+
+        <div class="rationale-signals">
+          <article class="rationale-signal">
+            <span>STRONGEST SIGNAL</span>
+            <strong>${strongest.label} · ${strongest.score}/100</strong>
+            <p>
+              この企業の企業品質を最も強く支えている評価項目です。
+            </p>
+          </article>
+
+          <article class="rationale-signal">
+            <span>WATCH CLOSELY</span>
+            <strong>${weakest.label} · ${weakest.score}/100</strong>
+            <p>
+              相対的に低い項目です。今後の決算・市場環境で変化を確認したい領域です。
+            </p>
+          </article>
+        </div>
+
+        <div class="rationale-grid">
+          ${dimensions.map(dimension => {
+            const score = scoreOf(company, dimension.key);
+
+            return `
+              <article class="rationale-card">
+                <div class="rationale-card-top">
+                  <div>
+                    <p>${dimension.english}</p>
+                    <h3>${dimension.label}</h3>
+                  </div>
+
+                  <div class="rationale-value">
+                    <strong>${score}</strong>
+                    <small>/100</small>
+                  </div>
+                </div>
+
+                <div class="rationale-meter">
+                  <span style="width:${score}%"></span>
+                </div>
+
+                <p class="rationale-card-text">
+                  ${explanationFor(dimension.key, score)}
+                </p>
+              </article>
+            `;
+          }).join('')}
+        </div>
+
+        <p class="rationale-note">
+          ※ 現在はプロトタイプ用のローカルサンプルデータにもとづく評価です。
+          実際の投資判断では、一次情報・決算資料・市場価格などをあわせて確認してください。
+        </p>
+      </article>
+    `;
+  }
+
+  const previousRenderDetail = renderDetail;
+
+  renderDetail = function(company) {
+    previousRenderDetail(company);
+    renderRationale(company);
+    rationaleView.style.display = 'grid';
+  };
+
+  navButtons.forEach(button => {
+    button.addEventListener('click', () => {
+      if (button.dataset.section === 'dashboard') {
+        rationaleView.style.display = 'grid';
+        renderRationale(selected);
+      }
+
+      if (
+        button.dataset.section === 'companies' ||
+        button.dataset.section === 'rankings' ||
+        button.dataset.section === 'compare' ||
+        button.dataset.section === 'bookmarks'
+      ) {
+        rationaleView.style.display = 'none';
+      }
+    });
+  });
+
+  renderRationale(selected);
+  rationaleView.style.display = 'grid';
+})();
