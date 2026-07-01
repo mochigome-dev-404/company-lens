@@ -27,6 +27,9 @@
       gap: 14px;
     }
 
+.financials-view[hidden] {
+  display: none !important;
+}
     .financials-summary {
       display: flex;
       justify-content: space-between;
