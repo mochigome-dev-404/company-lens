@@ -1628,3 +1628,483 @@ renderDetail(selected);
       .click();
   });
 })();
+
+
+/* ---- Company Lens: Bookmarks view ---- */
+(() => {
+  const STORAGE_KEY = 'company-lens-bookmarks';
+
+  const topbarEl = document.querySelector('.topbar');
+  const heroGridEl = document.querySelector('.hero-grid');
+  const contentGridEl = document.querySelector('.content-grid');
+  const companyView = document.querySelector('#companiesView');
+  const rankingView = document.querySelector('#rankingsView');
+  const compareView = document.querySelector('#compareView');
+  const navButtons = document.querySelectorAll('.nav-item');
+
+  const bookmarkView = document.createElement('section');
+  bookmarkView.id = 'bookmarksView';
+  bookmarkView.style.display = 'none';
+
+  (compareView || rankingView || companyView || topbarEl)
+    .insertAdjacentElement('afterend', bookmarkView);
+
+  const bookmarkStyle = document.createElement('style');
+
+  bookmarkStyle.textContent = `
+    .bookmark-toggle {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: rgba(255,255,255,.04);
+      color: var(--gold);
+      padding: 10px 13px;
+      font: inherit;
+      font-weight: 900;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background .18s ease, transform .18s ease;
+    }
+
+    .bookmark-toggle:hover {
+      transform: translateY(-2px);
+      border-color: var(--gold);
+    }
+
+    .bookmark-toggle.saved {
+      background: var(--gold);
+      color: #17140d;
+      border-color: var(--gold);
+    }
+
+    #bookmarksView {
+      display: grid;
+      gap: 18px;
+    }
+
+    .bookmarks-shell {
+      border: 1px solid var(--line);
+      border-radius: 28px;
+      padding: 24px;
+      background:
+        radial-gradient(
+          circle at 90% 0%,
+          rgba(221, 186, 97, .12),
+          transparent 28%
+        ),
+        linear-gradient(
+          145deg,
+          rgba(255,255,255,.08),
+          rgba(255,255,255,.025)
+        );
+      box-shadow: var(--shadow);
+    }
+
+    .bookmarks-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 24px;
+      align-items: flex-end;
+      margin-bottom: 22px;
+    }
+
+    .bookmarks-head h2 {
+      margin: 4px 0 0;
+      font-size: clamp(32px, 4vw, 52px);
+      letter-spacing: -.06em;
+    }
+
+    .bookmarks-head p {
+      max-width: 420px;
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.8;
+    }
+
+    .bookmark-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .bookmark-card {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 18px;
+      align-items: center;
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      padding: 19px;
+      background: rgba(0,0,0,.13);
+    }
+
+    .bookmark-main {
+      display: grid;
+      gap: 7px;
+    }
+
+    .bookmark-main h3 {
+      margin: 0;
+      font-size: 22px;
+      letter-spacing: -.04em;
+    }
+
+    .bookmark-main p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .bookmark-description {
+      color: var(--soft) !important;
+      line-height: 1.7;
+    }
+
+    .bookmark-side {
+      display: grid;
+      justify-items: end;
+      gap: 12px;
+    }
+
+    .bookmark-score {
+      white-space: nowrap;
+    }
+
+    .bookmark-score .grade {
+      margin-right: 6px;
+      font-size: 18px;
+    }
+
+    .bookmark-score strong {
+      font-size: 30px;
+      letter-spacing: -.06em;
+    }
+
+    .bookmark-score small {
+      color: var(--muted);
+      font-weight: 800;
+    }
+
+    .bookmark-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .bookmark-open,
+    .bookmark-remove {
+      border-radius: 11px;
+      padding: 9px 12px;
+      font: inherit;
+      font-weight: 900;
+      cursor: pointer;
+    }
+
+    .bookmark-open {
+      border: 1px solid var(--gold);
+      background: transparent;
+      color: var(--gold);
+    }
+
+    .bookmark-open:hover {
+      background: var(--gold);
+      color: #17140d;
+    }
+
+    .bookmark-remove {
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.035);
+      color: var(--muted);
+    }
+
+    .bookmark-remove:hover {
+      border-color: #d67676;
+      color: #f09a9a;
+    }
+
+    .bookmark-empty {
+      display: grid;
+      place-items: center;
+      min-height: 360px;
+      border: 1px dashed var(--line);
+      border-radius: 22px;
+      text-align: center;
+      padding: 30px;
+    }
+
+    .bookmark-empty h3 {
+      margin: 0 0 9px;
+      font-size: 25px;
+    }
+
+    .bookmark-empty p {
+      max-width: 430px;
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.8;
+    }
+
+    @media (max-width: 720px) {
+      .bookmarks-head {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .bookmark-card {
+        grid-template-columns: 1fr;
+      }
+
+      .bookmark-side {
+        justify-items: start;
+      }
+    }
+  `;
+
+  document.head.appendChild(bookmarkStyle);
+
+  const bookmarkButton = document.createElement('button');
+  bookmarkButton.className = 'bookmark-toggle';
+  bookmarkButton.type = 'button';
+
+  topbarEl.appendChild(bookmarkButton);
+
+  function getBookmarks() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+
+      return Array.isArray(saved) ? saved : [];
+    } catch {
+      return [];
+    }
+  }
+
+  function setBookmarks(tickers) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(tickers));
+  }
+
+  function isBookmarked(ticker) {
+    return getBookmarks().includes(ticker);
+  }
+
+  function toggleBookmark(ticker) {
+    const saved = getBookmarks();
+
+    if (saved.includes(ticker)) {
+      setBookmarks(saved.filter(item => item !== ticker));
+    } else {
+      setBookmarks([...saved, ticker]);
+    }
+  }
+
+  function savedCompanies() {
+    return getBookmarks()
+      .map(ticker => companies.find(company => company.ticker === ticker))
+      .filter(Boolean)
+      .sort((a, b) => b.score - a.score);
+  }
+
+  function gradeStyle(grade) {
+    if (grade === 'S') return 'grade-s';
+    if (grade.includes('A')) return 'grade-a';
+    if (grade.includes('B')) return 'grade-b';
+
+    return 'grade-c';
+  }
+
+  function updateBookmarkButton() {
+    if (!selected) return;
+
+    const saved = isBookmarked(selected.ticker);
+
+    bookmarkButton.textContent = saved
+      ? '★ 保存済み'
+      : '☆ 保存する';
+
+    bookmarkButton.classList.toggle('saved', saved);
+  }
+
+  function showBookmarkButton() {
+    bookmarkButton.style.display = 'inline-flex';
+    updateBookmarkButton();
+  }
+
+  function hideBookmarkButton() {
+    bookmarkButton.style.display = 'none';
+  }
+
+  const originalRenderDetail = renderDetail;
+
+  renderDetail = function(company) {
+    originalRenderDetail(company);
+
+    window.setTimeout(() => {
+      updateBookmarkButton();
+    }, 0);
+  };
+
+  function renderBookmarks() {
+    const saved = savedCompanies();
+
+    bookmarkView.innerHTML = `
+      <article class="bookmarks-shell">
+        <div class="bookmarks-head">
+          <div>
+            <p class="section-label">Personal Watchlist</p>
+            <h2>保存した企業</h2>
+          </div>
+
+          <p>
+            気になる企業を保存して、あとから比較・確認できる個人用のウォッチリストです。
+          </p>
+        </div>
+
+        ${
+          saved.length
+            ? `
+              <div class="bookmark-list">
+                ${saved.map(company => `
+                  <article class="bookmark-card">
+                    <div class="bookmark-main">
+                      <p class="section-label">
+                        ${company.ticker} · ${company.sector}
+                      </p>
+
+                      <h3>${company.name}</h3>
+
+                      <p>${company.jp}</p>
+
+                      <p class="bookmark-description">
+                        ${company.description}
+                      </p>
+                    </div>
+
+                    <div class="bookmark-side">
+                      <div class="bookmark-score">
+                        <span class="grade ${gradeStyle(company.grade)}">
+                          ${company.grade}
+                        </span>
+
+                        <strong>${company.score}</strong>
+                        <small>/100</small>
+                      </div>
+
+                      <div class="bookmark-actions">
+                        <button
+                          class="bookmark-open"
+                          type="button"
+                          data-bookmark-open="${company.ticker}"
+                        >
+                          詳細を見る
+                        </button>
+
+                        <button
+                          class="bookmark-remove"
+                          type="button"
+                          data-bookmark-remove="${company.ticker}"
+                        >
+                          削除
+                        </button>
+                      </div>
+                    </div>
+                  </article>
+                `).join('')}
+              </div>
+            `
+            : `
+              <div class="bookmark-empty">
+                <div>
+                  <p class="section-label">NO SAVED COMPANIES</p>
+                  <h3>まだ企業を保存していません。</h3>
+                  <p>
+                    Dashboardで企業を選び、右上の「☆ 保存する」を押すと、
+                    ここに自分だけの企業リストが作られます。
+                  </p>
+                </div>
+              </div>
+            `
+        }
+      </article>
+    `;
+  }
+
+  function showBookmarks() {
+    heroGridEl.style.display = 'none';
+    contentGridEl.style.display = 'none';
+
+    if (companyView) {
+      companyView.style.display = 'none';
+    }
+
+    if (rankingView) {
+      rankingView.style.display = 'none';
+    }
+
+    if (compareView) {
+      compareView.style.display = 'none';
+    }
+
+    bookmarkView.style.display = 'grid';
+
+    document.querySelector('.eyebrow').textContent =
+      'Personal Watchlist';
+
+    document.querySelector('.topbar h1').textContent =
+      '保存した企業';
+
+    hideBookmarkButton();
+    renderBookmarks();
+  }
+
+  bookmarkButton.addEventListener('click', () => {
+    if (!selected) return;
+
+    toggleBookmark(selected.ticker);
+    updateBookmarkButton();
+  });
+
+  navButtons.forEach(button => {
+    button.addEventListener('click', () => {
+      if (button.dataset.section === 'bookmarks') {
+        showBookmarks();
+      }
+
+      if (button.dataset.section === 'dashboard') {
+        showBookmarkButton();
+      }
+
+      if (
+        button.dataset.section === 'companies' ||
+        button.dataset.section === 'rankings' ||
+        button.dataset.section === 'compare'
+      ) {
+        hideBookmarkButton();
+      }
+    });
+  });
+
+  bookmarkView.addEventListener('click', event => {
+    const removeButton = event.target.closest('[data-bookmark-remove]');
+
+    if (removeButton) {
+      toggleBookmark(removeButton.dataset.bookmarkRemove);
+      renderBookmarks();
+      updateBookmarkButton();
+      return;
+    }
+
+    const openButton = event.target.closest('[data-bookmark-open]');
+
+    if (!openButton) return;
+
+    const company = companies.find(
+      item => item.ticker === openButton.dataset.bookmarkOpen
+    );
+
+    if (!company) return;
+
+    renderDetail(company);
+
+    document
+      .querySelector('[data-section="dashboard"]')
+      .click();
+  });
+
+  showBookmarkButton();
+})();
